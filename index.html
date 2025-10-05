@@ -1,90 +1,47 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Push Notification dengan Telegram</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Receiver Notif</title>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Website Push Notification</h1>
-            <p class="subtitle">Integrasi dengan Telegram Bot & Firebase</p>
-        </header>
-        
-        <div class="status-panel">
-            <div class="status-card">
-                <h3 class="status-title">
-                    <span class="status-indicator status-offline" id="server-indicator"></span>
-                    Status Server
-                </h3>
-                <p id="server-status">Memeriksa...</p>
-            </div>
-            
-            <div class="status-card">
-                <h3 class="status-title">
-                    <span class="status-indicator status-offline" id="firebase-indicator"></span>
-                    Firebase
-                </h3>
-                <p id="firebase-status">Belum terhubung</p>
-            </div>
-            
-            <div class="status-card">
-                <h3 class="status-title">
-                    <span class="status-indicator status-offline" id="telegram-indicator"></span>
-                    Bot Telegram
-                </h3>
-                <p id="telegram-status">Belum terhubung</p>
-            </div>
-            
-            <div class="status-card">
-                <h3 class="status-title">
-                    <span class="status-indicator status-offline" id="notification-indicator"></span>
-                    Izin Notifikasi
-                </h3>
-                <p id="notification-status">Belum diizinkan</p>
-            </div>
-        </div>
-        
-        <div class="permission-section">
-            <h3 class="permission-title">💬 Izin Notifikasi</h3>
-            <p>Aktifkan notifikasi untuk menerima pesan dari bot Telegram meskipun browser ditutup.</p>
-            <button id="request-permission" class="btn">
-                <span>🔔 Minta Izin Notifikasi</span>
-            </button>
-            <button id="test-notification" class="btn" disabled>
-                <span>🧪 Test Notifikasi</span>
-            </button>
-        </div>
-        
-        <div class="instructions">
-            <h2>📝 Cara Menggunakan</h2>
-            <ol>
-                <li>Klik tombol <span class="code">Minta Izin Notifikasi</span> untuk mengaktifkan push notification</li>
-                <li>Pastikan semua indikator berstatus <span class="code">Online</span> (hijau)</li>
-                <li>Gunakan bot Telegram dengan perintah: <span class="code">/set [pesan]</span></li>
-                <li>Contoh: <span class="code">/set halo dek</span> akan mengirim notifikasi "halo dek" ke perangkat ini</li>
-                <li>Notifikasi akan muncul meskipun browser Chrome sedang tidak terbuka</li>
-            </ol>
-        </div>
-        
-        <div class="notification-log">
-            <h3 class="log-title">📋 Log Notifikasi</h3>
-            <div id="log-entries">
-                <div class="log-entry">
-                    <span class="log-time">[Sistem]</span> Sistem dimulai. Menunggu notifikasi...
-                </div>
-            </div>
-        </div>
-        
-        <footer>
-            <p>Website Push Notification dengan Telegram Bot & Firebase</p>
-        </footer>
-    </div>
+  <h2>Receiver Notif</h2>
+  <p>Notif bakal muncul kalo izin dikasih.</p>
 
-    <!-- Firebase SDK -->
-    <script type="module" src="firebase-init.js"></script>
-    <script src="app.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcVJsqtRLkDklZ61XaFrN8LAj7F6eBM80",
+      authDomain: "notif-webku.firebaseapp.com",
+      databaseURL: "https://notif-webku-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "notif-webku",
+      storageBucket: "notif-webku.appspot.com",
+      messagingSenderId: "1064332196897",
+      appId: "1:1064332196897:web:f8a4423c1a187e8a51f760"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Minta izin notif
+    if(Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+
+    const notifRef = ref(db, 'notifs');
+    onChildAdded(notifRef, (data) => {
+      const notif = data.val();
+      if(Notification.permission === "granted") {
+        const n = new Notification(notif.title, {
+          body: notif.message,
+        });
+        n.onclick = () => {
+          if(notif.url) window.open(notif.url, "_blank");
+        }
+      }
+    });
+  </script>
 </body>
 </html>
