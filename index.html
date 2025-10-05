@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <title>Receiver Notif</title>
 <style>
-  #status { font-weight:bold; color:red; }
-  #status.connected { color:green; }
+#status { font-weight:bold; color:red; }
+#status.connected { color:green; }
 </style>
 </head>
 <body>
 <h2>Receiver Notif</h2>
 <p>Status koneksi Firebase: <span id="status">Offline</span></p>
-<p>Notif bakal muncul kalo izin dikasih.</p>
+<p>Notif bakal muncul meski tab ditutup</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
@@ -31,33 +31,33 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const statusEl = document.getElementById('status');
-
-// Indikator koneksi realtime
 const connectedRef = ref(db, '.info/connected');
-onValue(connectedRef, (snap) => {
-  if (snap.val() === true) {
-    statusEl.textContent = 'Connected';
+onValue(connectedRef, (snap)=>{
+  if(snap.val()===true){
+    statusEl.textContent='Connected';
     statusEl.classList.add('connected');
   } else {
-    statusEl.textContent = 'Offline';
+    statusEl.textContent='Offline';
     statusEl.classList.remove('connected');
   }
 });
 
-// Minta izin notif
-async function requestNotifPermission() {
-  if(Notification.permission !== "granted") {
-    await Notification.requestPermission();
-  }
+// register service worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(()=>{
+    console.log('Service Worker registered');
+  });
 }
-requestNotifPermission();
 
-const notifRef = ref(db, 'notifs');
-onChildAdded(notifRef, (snap) => {
+// listen notif dan kirim ke service worker
+const notifRef = ref(db,'notifs');
+onChildAdded(notifRef,(snap)=>{
   const data = snap.val();
-  if(Notification.permission === "granted") {
-    const n = new Notification(data.title, { body: data.message });
-    n.onclick = () => { if(data.url) window.open(data.url, "_blank"); }
+  if(navigator.serviceWorker.controller){
+    navigator.serviceWorker.controller.postMessage({
+      title: data.title,
+      message: data.message
+    });
   }
 });
 </script>
