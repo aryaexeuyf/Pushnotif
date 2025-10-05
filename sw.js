@@ -1,20 +1,18 @@
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', e => {
-  console.log('Service Worker aktif');
-});
+self.addEventListener('install', e=>self.skipWaiting());
+self.addEventListener('activate', e=>console.log('Service Worker aktif'));
 
 self.addEventListener('message', e=>{
   const data = e.data;
   self.registration.showNotification(data.title,{
     body: data.message,
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Firebase_Logo.svg'
+    icon: data.icon || 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Firebase_Logo.svg',
+    data: {url: data.url}
   });
 });
 
 self.addEventListener('notificationclick', e=>{
   e.notification.close();
-  // bisa tambahin window.open kalo pengen URL redirect
+  if(e.notification.data?.url){
+    clients.openWindow(e.notification.data.url);
+  }
 });
