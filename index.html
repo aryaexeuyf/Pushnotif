@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <title>Receiver Notif</title>
 <style>
-#status { font-weight:bold; color:red; }
-#status.connected { color:green; }
+body{font-family:sans-serif;padding:20px;}
+#status{font-weight:bold;color:red;}
+#status.connected{color:green;}
 </style>
 </head>
 <body>
 <h2>Receiver Notif</h2>
-<p>Status koneksi Firebase: <span id="status">Offline</span></p>
-<p>Notif bakal muncul meski tab ditutup</p>
+<p>Status Firebase: <span id="status">Offline</span></p>
+<p>Notif bakal muncul meski tab ditutup (selama browser nyala).</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
@@ -29,34 +30,30 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const statusEl = document.getElementById('status');
-const connectedRef = ref(db, '.info/connected');
-onValue(connectedRef, (snap)=>{
-  if(snap.val()===true){
-    statusEl.textContent='Connected';
-    statusEl.classList.add('connected');
-  } else {
-    statusEl.textContent='Offline';
-    statusEl.classList.remove('connected');
-  }
+
+onValue(ref(db,'.info/connected'), snap => {
+  if(snap.val()){statusEl.textContent='Connected';statusEl.classList.add('connected');}
+  else{statusEl.textContent='Offline';statusEl.classList.remove('connected');}
 });
 
 // register service worker
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').then(()=>{
-    console.log('Service Worker registered');
-  });
+  navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered'));
 }
 
+// minta izin notif
+if(Notification.permission!=='granted'){Notification.requestPermission();}
+
 // listen notif dan kirim ke service worker
-const notifRef = ref(db,'notifs');
-onChildAdded(notifRef,(snap)=>{
+onChildAdded(ref(db,'notifs'), snap=>{
   const data = snap.val();
   if(navigator.serviceWorker.controller){
     navigator.serviceWorker.controller.postMessage({
-      title: data.title,
-      message: data.message
+      title:data.title,
+      message:data.message,
+      icon:data.icon,
+      url:data.url
     });
   }
 });
