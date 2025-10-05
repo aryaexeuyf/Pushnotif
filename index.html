@@ -1,47 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Receiver Notif</title>
+<meta charset="UTF-8">
+<title>Receiver Notif</title>
+<style>
+  #status { font-weight:bold; color:red; }
+  #status.connected { color:green; }
+</style>
 </head>
 <body>
-  <h2>Receiver Notif</h2>
-  <p>Notif bakal muncul kalo izin dikasih.</p>
+<h2>Receiver Notif</h2>
+<p>Status koneksi Firebase: <span id="status">Offline</span></p>
+<p>Notif bakal muncul kalo izin dikasih.</p>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getDatabase, ref, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBcVJsqtRLkDklZ61XaFrN8LAj7F6eBM80",
-      authDomain: "notif-webku.firebaseapp.com",
-      databaseURL: "https://notif-webku-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "notif-webku",
-      storageBucket: "notif-webku.appspot.com",
-      messagingSenderId: "1064332196897",
-      appId: "1:1064332196897:web:f8a4423c1a187e8a51f760"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyBcVJsqtRLkDklZ61XaFrN8LAj7F6eBM80",
+  authDomain: "notif-webku.firebaseapp.com",
+  databaseURL: "https://notif-webku-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "notif-webku",
+  storageBucket: "notif-webku.appspot.com",
+  messagingSenderId: "1064332196897",
+  appId: "1:1064332196897:web:f8a4423c1a187e8a51f760"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-    // Minta izin notif
-    if(Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
+const statusEl = document.getElementById('status');
 
-    const notifRef = ref(db, 'notifs');
-    onChildAdded(notifRef, (data) => {
-      const notif = data.val();
-      if(Notification.permission === "granted") {
-        const n = new Notification(notif.title, {
-          body: notif.message,
-        });
-        n.onclick = () => {
-          if(notif.url) window.open(notif.url, "_blank");
-        }
-      }
-    });
-  </script>
+// Indikator koneksi realtime
+const connectedRef = ref(db, '.info/connected');
+onValue(connectedRef, (snap) => {
+  if (snap.val() === true) {
+    statusEl.textContent = 'Connected';
+    statusEl.classList.add('connected');
+  } else {
+    statusEl.textContent = 'Offline';
+    statusEl.classList.remove('connected');
+  }
+});
+
+// Minta izin notif
+async function requestNotifPermission() {
+  if(Notification.permission !== "granted") {
+    await Notification.requestPermission();
+  }
+}
+requestNotifPermission();
+
+const notifRef = ref(db, 'notifs');
+onChildAdded(notifRef, (snap) => {
+  const data = snap.val();
+  if(Notification.permission === "granted") {
+    const n = new Notification(data.title, { body: data.message });
+    n.onclick = () => { if(data.url) window.open(data.url, "_blank"); }
+  }
+});
+</script>
 </body>
 </html>
