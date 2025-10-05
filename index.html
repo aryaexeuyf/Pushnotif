@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Push Notif Contoh</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notif Webku</title>
 </head>
 <body>
-  <h2>🔔 Contoh Notifikasi Web</h2>
-  <button id="btn">Tampilno Notif</button>
+  <h2>🔥 Notifikasi Firebase Webku</h2>
+  <button id="izin">Aktifno Notif</button>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js"></script>
 
   <script>
-    // Daftar service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-      .then(() => console.log('Service worker terdaftar!'))
-      .catch(err => console.error('Gagal daftar service worker:', err));
-    }
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcVJsqtRLkDklZ61XaFrN8LAj7F6eBM80",
+      authDomain: "notif-webku.firebaseapp.com",
+      databaseURL: "https://notif-webku-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "notif-webku",
+      storageBucket: "notif-webku.firebasestorage.app",
+      messagingSenderId: "1064332196897",
+      appId: "1:1064332196897:web:f8a4423c1a187e8a51f760"
+    };
 
-    // Minta izin notifikasi
-    document.getElementById('btn').addEventListener('click', async () => {
-      const izin = await Notification.requestPermission();
-      if (izin === 'granted') {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification('Halo rek 👋', {
-            body: 'Iki notifikasi web sing muncul nang Android!',
-            icon: 'https://cdn-icons-png.flaticon.com/512/1827/1827272.png',
-            vibrate: [200, 100, 200],
-            tag: 'notif-sample'
+    const app = firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+
+    document.getElementById("izin").addEventListener("click", () => {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          messaging.getToken({
+            vapidKey: "GANTI_NGGO_VAPID_KEY_MU_DEWE"
+          }).then((token) => {
+            console.log("Token user:", token);
+            alert("Token muncul di console! Salin token iki buat kirim notif.");
           });
-        });
-      } else {
-        alert('Izin notifikasi ditolak, rek.');
-      }
+        } else {
+          alert("Izin notifikasi ditolak!");
+        }
+      });
+    });
+
+    messaging.onMessage((payload) => {
+      console.log("Pesan mlebu:", payload);
+      new Notification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: payload.notification.icon
+      });
     });
   </script>
 </body>
