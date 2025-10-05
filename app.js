@@ -205,6 +205,65 @@ async function getFCMToken() {
     }
 }
 
+// Simpan token ke Firebase Database
+async function saveTokenToDatabase(token) {
+    try {
+        if (!window.firebaseApp) {
+            throw new Error('Firebase tidak terinisialisasi');
+        }
+
+        // Generate user ID sederhana
+        const userId = generateUserId();
+        
+        // Simpan ke localStorage untuk penggunaan berikutnya
+        localStorage.setItem('fcm_user_id', userId);
+        localStorage.setItem('fcm_token', token);
+
+        // Simpan ke Firebase Realtime Database
+        const databaseURL = 'https://notif-webku-default-rtdb.asia-southeast1.firebasedatabase.app';
+        const response = await fetch(`${databaseURL}/tokens/${userId}.json`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                token: token,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
+            })
+        });
+
+        if (response.ok) {
+            addLog('✓ Token berhasil disimpan ke database');
+            return true;
+        } else {
+            throw new Error('Gagal menyimpan token');
+        }
+    } catch (error) {
+        addLog('✗ Gagal menyimpan token ke database: ' + error.message);
+        return false;
+    }
+}
+
+// Generate simple user ID
+function generateUserId() {
+    let userId = localStorage.getItem('fcm_user_id');
+    if (!userId) {
+        userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('fcm_user_id', userId);
+    }
+    return userId;
+}
+
+// Panggil fungsi saveToken di dalam getFCMToken setelah mendapatkan token:
+// Tambahkan di fungsi getFCMToken setelah mendapatkan token:
+// if (token) {
+//     currentFCMToken = token;
+//     addLog('✓ Token FCM diterima: ' + token.substring(0, 20) + '...');
+//     await saveTokenToDatabase(token);  // <-- TAMBAH BARIS INI
+//     return token;
+// }
+
 // Tampilkan notifikasi
 function showNotification(title, body) {
     if (Notification.permission === 'granted') {
